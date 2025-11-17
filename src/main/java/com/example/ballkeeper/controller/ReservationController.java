@@ -59,15 +59,6 @@ public class ReservationController {
     }
 
     private ReservationResponse toDto(Reservation r) {
-        return new ReservationResponse(
-                r.getId(),
-                r.getUser().getId(),
-                r.getUser().getName(),
-                r.getItem().getId(),
-                r.getItem().getName(),
-                r.getStartTime(),
-                r.getEndTime(),
-                r.getStatus()
-        );
+        return new ReservationResponse(r);
     }
 }
