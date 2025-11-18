@@ -23,12 +23,6 @@ public class ReservationController {
 
     private static final DateTimeFormatter F = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    // 물품 목록(활성)
-    @GetMapping("/items")
-    public Object items() {
-        return itemRepository.findByActiveTrue();
-    }
-
     // 임시 로그인 대체: email로 유저 찾거나 자동 생성 (개발 편의)
     @PostMapping("/ensure-user")
     public Object ensureUser(@RequestParam String email, @RequestParam String name) {
@@ -59,15 +53,6 @@ public class ReservationController {
     }
 
     private ReservationResponse toDto(Reservation r) {
-        return new ReservationResponse(
-                r.getId(),
-                r.getUser().getId(),
-                r.getUser().getName(),
-                r.getItem().getId(),
-                r.getItem().getName(),
-                r.getStartTime(),
-                r.getEndTime(),
-                r.getStatus()
-        );
+        return new ReservationResponse(r);
     }
 }
