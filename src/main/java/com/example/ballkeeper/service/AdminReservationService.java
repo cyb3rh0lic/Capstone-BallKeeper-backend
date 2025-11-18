@@ -1,5 +1,6 @@
 package com.example.ballkeeper.service;
 
+import com.example.ballkeeper.api.dto.reservationDto.ReservationResponse;
 import com.example.ballkeeper.domain.reservation.Reservation;
 import com.example.ballkeeper.domain.reservation.ReservationStatus;
 import com.example.ballkeeper.repository.ReservationRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class AdminReservationService {
         if (!admin.isAdmin()) throw new AccessDeniedException("관리자만 가능합니다.");
     }
 
-    public Reservation approve(Long adminId, Long reservationId) {
+    public ReservationResponse approve(Long adminId, Long reservationId) {
         assertAdmin(adminId);
 
         var r = reservationRepository.findById(reservationId)
@@ -43,10 +45,10 @@ public class AdminReservationService {
 
         r.setStatus(ReservationStatus.APPROVED);
         r.setReason(null); // 예전 반려사유가 있었다면 정리
-        return r; // @Transactional 이므로 flush 시 저장
+        return new ReservationResponse(r); // @Transactional 이므로 flush 시 저장, DTO로 변환하여 반환
     }
 
-    public Reservation reject(Long adminId, Long reservationId, String reason) {
+    public ReservationResponse reject(Long adminId, Long reservationId, String reason) {
         assertAdmin(adminId);
 
         var r = reservationRepository.findById(reservationId)
@@ -56,11 +58,36 @@ public class AdminReservationService {
         }
         r.setStatus(ReservationStatus.REJECTED);
         r.setReason(reason);
-        return r;
+        return new ReservationResponse(r);
     }
 
     @Transactional(readOnly = true)
-    public List<Reservation> pendingList() {
-        return reservationRepository.findByStatusOrderByStartTimeAsc(ReservationStatus.PENDING);
+    public List<ReservationResponse> pendingList() {
+        return reservationRepository.findByStatusOrderByStartTimeAsc(ReservationStatus.PENDING)
+                .stream()
+                .map(ReservationResponse::new) // DTO로 변환
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * '승인 완료'된 예약 목록을 시작 시간 오름차순으로 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> approvedList() {
+        return reservationRepository.findByStatusOrderByStartTimeAsc(ReservationStatus.APPROVED)
+                .stream()
+                .map(ReservationResponse::new) // DTO로 변환
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * '전체' 예약 내역을 시작 시간 최신순(내림차순)으로 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> allList() {
+        return reservationRepository.findAllByOrderByStartTimeDesc()
+                .stream()
+                .map(ReservationResponse::new) // DTO로 변환
+                .collect(Collectors.toList());
     }
 }
