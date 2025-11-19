@@ -70,10 +70,10 @@ public class AdminReservationService {
                 .collect(Collectors.toList());
     }
 
-    // '승인 완료'된 예약 목록을 시작 시간 오름차순으로 조회합니다.
+    // '승인 완료'된 예약 목록을 시작 시간 내림차순으로 조회합니다.
     @Transactional(readOnly = true)
     public List<ReservationResponse> approvedList() {
-        return reservationRepository.findByStatusOrderByStartTimeAsc(ReservationStatus.APPROVED)
+        return reservationRepository.findByStatusOrderByStartTimeDesc(ReservationStatus.APPROVED)
                 .stream()
                 .map(ReservationResponse::new) // DTO로 변환
                 .collect(Collectors.toList());
