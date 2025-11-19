@@ -11,4 +11,5 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     Optional<UserAccount> findByEmail(String email);
 
     List<UserAccount> findByAdminTrue(); // 관리자(admin=true)인 모든 사용자를 찾는 기능
+    List<UserAccount> findAllByOrderByIdAsc(); // 모든 사용자를 ID 오름차순으로 조회
 }
