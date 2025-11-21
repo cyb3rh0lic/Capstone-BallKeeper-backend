@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Collection;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     @Query("""
@@ -33,6 +34,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findAll(Sort sort);
     List<Reservation> findAllByOrderByStartTimeDesc();
     // (allList 용)
+    List<Reservation> findByItemIdAndStatusInAndEndTimeGreaterThanAndStartTimeLessThan(
+            Long itemId,
+            Collection<ReservationStatus> statuses,
+            LocalDateTime rangeStart,
+            LocalDateTime rangeEnd
+    );
 
     boolean existsByItemIdAndStatusAndStartTimeLessThanAndEndTimeGreaterThan(
             Long itemId, ReservationStatus status,
@@ -41,7 +48,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // 승인 대기 중인 예약 수 (KPI)
     long countByStatus(ReservationStatus status);
 
-    // 최근 7일간 일별 예약 수 (Native Query 사용이 간편함)
+    // 최근 7일간 일별 예약 수
     @Query(value = "SELECT DATE_FORMAT(start_time, '%m-%d') as dateStr, COUNT(*) as cnt " +
             "FROM reservation " +
             "WHERE start_time >= :sevenDaysAgo " +
@@ -54,4 +61,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "GROUP BY r.item.name " +
             "ORDER BY COUNT(r) DESC")
     List<Object[]> findTopPopularItems(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT r FROM Reservation r " +
+            "WHERE r.item.id = :itemId " +
+            "AND r.status IN ('APPROVED', 'PENDING') " +
+            "AND r.endTime > :rangeStart " +
+            "AND r.startTime < :rangeEnd")
+    List<Reservation> findCalendarEvents(@Param("itemId") Long itemId,
+                                         @Param("rangeStart") LocalDateTime rangeStart,
+                                         @Param("rangeEnd") LocalDateTime rangeEnd);
 }

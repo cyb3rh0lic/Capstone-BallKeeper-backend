@@ -4,6 +4,7 @@ import com.example.ballkeeper.domain.reservation.Reservation;
 import com.example.ballkeeper.domain.reservation.ReservationStatus;
 import com.example.ballkeeper.repository.*;
 import com.example.ballkeeper.event.ReservationCreatedEvent;
+import com.example.ballkeeper.api.dto.reservationDto.CalendarEventResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +47,7 @@ public class ReservationService {
                 .build();
 
         reservationRepository.save(r);
-        
+
         String msg = String.format("📢 새 예약 요청: %s님이 %s을(를) 예약했습니다.",
                 user.getName(), equipment.getName());
         notificationService.sendToAdmins(msg);
@@ -66,5 +69,14 @@ public class ReservationService {
                 .orElseThrow(() -> new IllegalArgumentException("예약이 없습니다."));
         if (!r.getUser().getId().equals(userId)) throw new IllegalStateException("본인 예약만 취소 가능합니다!");
         r.setStatus(ReservationStatus.CANCELLED);
+    }
+
+    // 캘린더 조회
+    @Transactional(readOnly = true)
+    public List<CalendarEventResponse> getCalendarEvents(Long itemId, LocalDateTime start, LocalDateTime end) {
+        return reservationRepository.findCalendarEvents(itemId, start, end)
+                .stream()
+                .map(CalendarEventResponse::new)
+                .collect(Collectors.toList());
     }
 }

@@ -6,12 +6,15 @@ import com.example.ballkeeper.domain.reservation.Reservation;
 import com.example.ballkeeper.repository.ItemRepository;
 import com.example.ballkeeper.service.ReservationService;
 import com.example.ballkeeper.repository.UserAccountRepository;
+import com.example.ballkeeper.api.dto.reservationDto.CalendarEventResponse;
+import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api")
@@ -50,6 +53,15 @@ public class ReservationController {
     @PostMapping("/reservations/{id}/cancel")
     public void cancel(@RequestParam Long userId, @PathVariable Long id) {
         reservationService.cancel(userId, id);
+    }
+
+    // 캘린더 데이터 조회 API
+    @GetMapping("/reservations/calendar")
+    public List<CalendarEventResponse> getCalendarEvents(
+            @RequestParam Long itemId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return reservationService.getCalendarEvents(itemId, start, end);
     }
 
     private ReservationResponse toDto(Reservation r) {
