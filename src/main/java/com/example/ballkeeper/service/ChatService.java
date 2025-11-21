@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 @Service
 public class ChatService {
@@ -13,29 +14,39 @@ public class ChatService {
 
     public ChatService(ChatClient.Builder builder) {
         this.chatClient = builder
-                .defaultFunctions("createReservation", "myReservations", "cancelReservation")
+                .defaultFunctions(
+                        "createReservation",
+                        "myReservations",
+                        "cancelReservation",
+                        "getActiveItems"
+                )
                 .build();
     }
 
     public String chat(Long userId, String userMessage) {
-        // 현재 시간을 AI에게 알려주기 위해 문자열로 포맷
         String currentTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
+        String systemPromptTemplate = """
+            당신은 'BallKeeper'라는 이름의 **스포츠 용품 대여** 전문 AI 어시스턴트입니다.
+            당신의 유일한 임무는 사용자가 '축구공', '농구공', '테니스 라켓' 등 다양한 스포츠 용품을 예약, 조회, 취소하는 것을 돕는 것입니다.
+
+            ### 중요 규칙
+            1.  **역할 한정**: 당신은 **오직 스포츠 용품 예약 및 관리에 대해서만** 응답해야 합니다.
+            2.  **금지 사항**: 예약과 관련 없는 일상 대화나 잡담에는 응답하지 마십시오. 만약 관련 없는 질문이 들어오면, "죄송합니다. 저는 스포츠 용품 예약만 도와드릴 수 있습니다."라고만 응답해야 합니다.
+            3.  **정보 확인**: 예약 생성이나 취소에 필요한 정보(물품 ID, 시간 등)가 부족하면, 반드시 사용자에게 되물어서 정보를 요청해야 합니다.
+            4.  **시간 인식**: 현재 서버 시간은 {now} 입니다. '내일', '모레' 등의 상대적 시간은 이 시간을 기준으로 계산해야 합니다.
+            5.  **기능 사용 (예약)**: 예약 생성, 조회, 취소는 반드시 당신에게 제공된 'Function Calling' 도구(createReservation, myReservations, cancelReservation)를 사용해야 합니다.
+            6.  **기능 사용 (물품 조회)**: 사용자가 '예약 가능한 물품'이나 '어떤 용품이 있는지', '뭐 예약할 수 있어?' 라고 물어보면, `getActiveItems` 함수를 호출하여 목록을 조회하고 그 결과를 바탕으로 사용자에게 안내해야 합니다.
+
+            ### 사용자 식별
+            -   현재 대화 중인 사용자의 고유 ID(userId)는 **{userId}** 입니다.
+            -   모든 함수 호출(Function Calling) 시, 이 {userId}를 반드시 포함해야 합니다.
+            """;
+
         return chatClient.prompt()
-                .system(String.format("""
-                    당신은 BallKeeper 예약 관리 챗봇입니다.
-                    사용자를 도와 예약을 생성, 조회, 취소하는 역할을 합니다.
-                    현재 대화하는 사용자의 ID는 %d 입니다.
-                    현재 서버 시간은 %s 입니다. "오늘", "내일" 같은 상대적인 시간은 이 시간을 기준으로 계산해야 합니다.
-
-                    '예약 생성'을 위해서는 사용자 ID, 물품 ID, 시작 시간, 종료 시간이 필요합니다.
-                    '내 예약 조회'를 위해서는 사용자 ID가 필요합니다.
-                    '예약 취소'를 위해서는 사용자 ID와 예약 ID가 필요합니다.
-
-                    **가장 중요한 규칙**: 만약 함수를 호출하는 데 필요한 모든 정보를 사용자의 메시지로부터 명확히 파악했다면,
-                    절대로 사용자에게 되묻거나 확인하지 말고 즉시 함수를 호출하세요.
-                    정보가 부족할 경우에만 사용자에게 추가 정보를 요청하세요.
-                    """, userId, currentTime))
+                .system(s -> s.text(systemPromptTemplate)
+                        .param("now", currentTime)
+                        .param("userId", String.valueOf(userId)))
                 .user(userMessage)
                 .call()
                 .content();

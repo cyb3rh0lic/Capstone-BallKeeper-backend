@@ -53,7 +53,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers(Long adminId) {
         assertAdmin(adminId);
-        return userAccountRepository.findAllByOrderByIdAsc()
+        return userAccountRepository.findAllByOrderByAdminDescIdAsc()
                 .stream()
                 .map(u -> new UserResponse(u.getId(), u.getEmail(), u.getName(), u.isAdmin()))
                 .collect(Collectors.toList());
