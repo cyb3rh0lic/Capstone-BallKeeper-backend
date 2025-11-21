@@ -6,6 +6,8 @@ import com.example.ballkeeper.api.dto.itemDto.ItemResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 
 import java.time.LocalDateTime;
 import java.util.function.Function;
@@ -73,6 +75,11 @@ public class AiConfig {
                     .collect(Collectors.joining("\n"));
             return "현재 예약 가능한 물품 목록입니다:\n" + itemList;
         };
+    }
+
+    @Bean
+    public ChatMemory chatMemory() {
+        return new InMemoryChatMemory();
     }
 
     public record ReservationRequest(Long userId, Long itemId, LocalDateTime startTime, LocalDateTime endTime) {}
