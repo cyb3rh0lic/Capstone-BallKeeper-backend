@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,25 +70,31 @@ public class AdminReservationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * '승인 완료'된 예약 목록을 시작 시간 오름차순으로 조회합니다.
-     */
+    // '승인 완료'된 예약 목록을 시작 시간 내림차순으로 조회합니다.
     @Transactional(readOnly = true)
     public List<ReservationResponse> approvedList() {
-        return reservationRepository.findByStatusOrderByStartTimeAsc(ReservationStatus.APPROVED)
+        return reservationRepository.findByStatusOrderByStartTimeDesc(ReservationStatus.APPROVED)
                 .stream()
                 .map(ReservationResponse::new) // DTO로 변환
                 .collect(Collectors.toList());
     }
 
-    /**
-     * '전체' 예약 내역을 시작 시간 최신순(내림차순)으로 조회합니다.
-     */
+    // 전체 예약 내역을 시작 시간 최신순(내림차순)으로 조회
     @Transactional(readOnly = true)
     public List<ReservationResponse> allList() {
         return reservationRepository.findAllByOrderByStartTimeDesc()
                 .stream()
                 .map(ReservationResponse::new) // DTO로 변환
+                .collect(Collectors.toList());
+    }
+
+    // 특정 사용자의 예약 내역 조회
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getUserReservations(Long userId) {
+        return reservationRepository.findAll(Sort.by(Sort.Direction.DESC, "startTime"))
+                .stream()
+                .filter(r -> r.getUser().getId().equals(userId)) // 메모리 필터링 (간단 구현)
+                .map(ReservationResponse::new)
                 .collect(Collectors.toList());
     }
 }
