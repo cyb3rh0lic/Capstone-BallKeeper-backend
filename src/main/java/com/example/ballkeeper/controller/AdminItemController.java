@@ -2,6 +2,7 @@ package com.example.ballkeeper.controller;
 
 import com.example.ballkeeper.api.dto.itemDto.ItemResponse;
 import com.example.ballkeeper.service.ItemService;
+import com.example.ballkeeper.api.dto.itemDto.ItemUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,5 +30,14 @@ public class AdminItemController {
             @RequestParam Long adminId) {
         // TODO: @AuthenticationPrincipal 로 adminId를 가져오도록 리팩토링
         return itemService.toggleItemActive(adminId, itemId, active);
+    }
+
+    // 관리자용: 물품 정보 수정
+    @PutMapping("/{itemId}")
+    public ItemResponse updateItem(
+            @PathVariable Long itemId,
+            @RequestBody ItemUpdateRequest req,
+            @RequestParam Long adminId) {
+        return itemService.updateItem(adminId, itemId, req);
     }
 }

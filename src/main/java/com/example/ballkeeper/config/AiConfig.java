@@ -1,12 +1,15 @@
 package com.example.ballkeeper.config;
 
 import com.example.ballkeeper.service.ReservationService;
+import com.example.ballkeeper.service.ItemService;
+import com.example.ballkeeper.api.dto.itemDto.ItemResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Description;
 
 import java.time.LocalDateTime;
 import java.util.function.Function;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -55,7 +58,24 @@ public class AiConfig {
         };
     }
 
+    @Bean
+    @Description("현재 예약 가능한 (active=true) 모든 용품의 목록과 상세 정보를 조회합니다. 사용자가 '어떤 물품이 있어?', '예약 가능한 공 목록 보여줘' 라고 물어볼 때 사용합니다.")
+    public Function<MyReservationsRequest, String> getActiveItems(ItemService itemService) {
+        return request -> {
+            List<ItemResponse> items = itemService.getActiveItems();
+
+            if (items.isEmpty()) {
+                return "현재 예약 가능한 물품이 없습니다.";
+            }
+            String itemList = items.stream()
+                    .map(item -> String.format("- 물품 ID %d: %s (설명: %s)",
+                            item.getId(), item.getName(), item.getDescription()))
+                    .collect(Collectors.joining("\n"));
+            return "현재 예약 가능한 물품 목록입니다:\n" + itemList;
+        };
+    }
+
     public record ReservationRequest(Long userId, Long itemId, LocalDateTime startTime, LocalDateTime endTime) {}
-    public record MyReservationsRequest(Long userId) {}
     public record CancelRequest(Long userId, Long reservationId) {}
+    public record MyReservationsRequest(Long userId) {}
 }

@@ -13,4 +13,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     // 관리자가 모든 아이템을 ID 오름차순으로 조회
     List<Item> findAllByOrderByIdAsc();
+
+    // 활성 물품 수를 세는 메서드
+    long countByActive(boolean active);
 }

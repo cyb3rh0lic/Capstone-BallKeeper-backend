@@ -6,6 +6,7 @@ import com.example.ballkeeper.domain.item.Item;
 import com.example.ballkeeper.domain.user.UserAccount;
 import com.example.ballkeeper.repository.ItemRepository;
 import com.example.ballkeeper.repository.UserAccountRepository;
+import com.example.ballkeeper.api.dto.itemDto.ItemUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -67,5 +68,20 @@ public class ItemService {
 
         item.setActive(active);
         return new ItemResponse(item); // 변경된 상태 DTO로 반환
+    }
+
+    // 물품 정보 수정 메서드
+    public ItemResponse updateItem(Long adminId, Long itemId, ItemUpdateRequest req) {
+        assertAdmin(adminId);
+
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("물품을 찾을 수 없습니다."));
+
+        // 이름과 설명 업데이트 (null이 아닌 경우에만 업데이트하거나, 덮어쓰기)
+        item.setName(req.getName());
+        item.setDescription(req.getDescription());
+
+        // JPA 변경 감지(Dirty Checking)로 인해 save 호출 불필요 (트랜잭션 종료 시 자동 저장)
+        return new ItemResponse(item);
     }
 }
