@@ -21,6 +21,7 @@ public class AdminReservationService {
 
     private final ReservationRepository reservationRepository;
     private final UserAccountRepository userAccountRepository;
+    private final NotificationService notificationService;
 
     private void assertAdmin(Long adminId) {
         var admin = userAccountRepository.findById(adminId)
@@ -46,6 +47,10 @@ public class AdminReservationService {
 
         r.setStatus(ReservationStatus.APPROVED);
         r.setReason(null); // 예전 반려사유가 있었다면 정리
+
+        String msg = String.format("✅ 예약이 승인되었습니다! (%s)", r.getItem().getName());
+        notificationService.sendToUser(r.getUser().getId(), msg);
+
         return new ReservationResponse(r); // @Transactional 이므로 flush 시 저장, DTO로 변환하여 반환
     }
 
@@ -59,6 +64,10 @@ public class AdminReservationService {
         }
         r.setStatus(ReservationStatus.REJECTED);
         r.setReason(reason);
+
+        String msg = String.format("❌ 예약이 반려되었습니다. 사유: %s", reason);
+        notificationService.sendToUser(r.getUser().getId(), msg);
+
         return new ReservationResponse(r);
     }
 

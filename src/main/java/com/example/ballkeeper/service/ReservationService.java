@@ -15,12 +15,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+
     private final ReservationRepository reservationRepository;
     private final ItemRepository itemRepository;
     private final UserAccountRepository userAccountRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationService notificationService;
 
-    // 로그인 미구현 상태이므로 임시로 userId를 파라미터로 받음
     @Transactional
     public Reservation create(Long userId, Long itemId, java.time.LocalDateTime start, java.time.LocalDateTime end) {
         if (!end.isAfter(start)) throw new IllegalArgumentException("예약 종료 시각은 반드시 예약 시작 시각보다 이후여야 합니다.");
@@ -43,8 +44,13 @@ public class ReservationService {
                 .build();
 
         reservationRepository.save(r);
+        
+        String msg = String.format("📢 새 예약 요청: %s님이 %s을(를) 예약했습니다.",
+                user.getName(), equipment.getName());
+        notificationService.sendToAdmins(msg);
 
-        eventPublisher.publishEvent(new ReservationCreatedEvent(this, r)); // 이벤트 발행
+        // (기존 이벤트 발행 코드는 유지)
+        eventPublisher.publishEvent(new ReservationCreatedEvent(this, r));
 
         return r;
     }
