@@ -1,6 +1,8 @@
 package com.example.ballkeeper.service;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -12,7 +14,7 @@ public class ChatService {
 
     private final ChatClient chatClient;
 
-    public ChatService(ChatClient.Builder builder) {
+    public ChatService(ChatClient.Builder builder, ChatMemory chatMemory) {
         this.chatClient = builder
                 .defaultFunctions(
                         "createReservation",
@@ -20,6 +22,7 @@ public class ChatService {
                         "cancelReservation",
                         "getActiveItems"
                 )
+                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
                 .build();
     }
 
@@ -48,6 +51,7 @@ public class ChatService {
                         .param("now", currentTime)
                         .param("userId", String.valueOf(userId)))
                 .user(userMessage)
+                .advisors(a -> a.param(MessageChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY, String.valueOf(userId)))
                 .call()
                 .content();
     }
